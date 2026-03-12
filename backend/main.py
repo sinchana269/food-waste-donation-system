@@ -63,7 +63,7 @@ def predict_spoilage(donation_id: int, db: Session = Depends(get_db)):
 def health_check():
     return {
         "status": "healthy", 
-        "version": "1.0.5-volunteer-fix", 
+        "version": "1.0.6-ngo-view-fix", 
         "database": str(engine.url)
     }
 
@@ -187,7 +187,13 @@ def get_my_donations(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    return db.query(models.Donation).filter(models.Donation.donor_id == current_user.id).all()
+    if current_user.role == "donor":
+        return db.query(models.Donation).filter(models.Donation.donor_id == current_user.id).all()
+    elif current_user.role == "ngo":
+        # Get donations that have been accepted by this NGO
+        requests = db.query(models.NGORequest).filter(models.NGORequest.ngo_id == current_user.id).all()
+        return [r.donation for r in requests]
+    return []
 
 @app.post("/donations/{donation_id}/accept")
 def accept_donation(
