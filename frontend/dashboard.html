@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Food Waste Donation System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-light">
+    <div id="loader" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.7); z-index:9999; display:flex; align-items:center; justify-content:center;">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse glass" id="sidebar">
+                <div class="position-sticky">
+                    <h4 class="fw-bold mb-4 text-primary">🌱 Dashboard</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" id="menuHome" onclick="location.reload()">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="menuProfile" onclick="showProfile()">My Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="donations.html">Public Feed</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="about.html">Our Mission</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contact.html">Support</a>
+                        </li>
+                    </ul>
+                    <hr>
+                    <button class="btn btn-outline-danger w-100" onclick="localStorage.clear(); window.location.href='index.html'">Logout</button>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Welcome, <span id="userName">User</span></h1>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="dropdown">
+                            <button class="btn btn-light position-relative" type="button" data-bs-toggle="dropdown">
+                                🔔 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifCount">0</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end p-3" style="width: 300px;" id="notifList">
+                                <li><p class="text-center text-muted mb-0">No new notifications</p></li>
+                            </ul>
+                        </div>
+                        <span class="badge bg-primary fs-6 p-1 px-3" id="userRole">Role</span>
+                    </div>
+                </div>
+
+                <div id="dashboardContent">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) window.location.href = 'login.html';
+
+            document.getElementById('userName').innerText = user.name;
+            document.getElementById('userRole').innerText = user.role.toUpperCase();
+
+            loadDashboard(user.role);
+        });
+
+        function loadDashboard(role) {
+            const content = document.getElementById('dashboardContent');
+            if (role === 'donor') {
+                content.innerHTML = `
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card glass p-4 text-center">
+                                <h3>Post Donation</h3>
+                                <button class="btn btn-primary mt-3" onclick="showForm()">Create New</button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card glass p-4">
+                                <h3>My Recent Donations</h3>
+                                <div id="myDonations">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                fetchMyDonations();
+            } else if (role === 'ngo') {
+                content.innerHTML = `
+                    <h3>Nearby Food Available</h3>
+                    <div id="map" class="mb-4" style="height: 300px; border-radius: 15px;"></div>
+                    <div class="row g-4" id="availableDonations">Loading...</div>
+                `;
+                fetchAvailableDonations();
+            } else if (role === 'volunteer') {
+                content.innerHTML = `
+                    <h3>My Assigned Pickups</h3>
+                    <div class="row g-4" id="assignedTasks">Loading...</div>
+                `;
+                fetchMyAssignments();
+            } else if (role === 'admin') {
+                content.innerHTML = `
+                    <div class="row g-4">
+                        <div class="col-md-3"><div class="card p-4 text-center"><h2 id="totalDonations">-</h2><p>Total Donations</p></div></div>
+                        <div class="col-md-3"><div class="card p-4 text-center"><h3 id="foodSaved">-</h3><p>Food Saved (kg)</p></div></div>
+                        <div class="col-md-3"><div class="card p-4 text-center"><h3 id="co2Saved" class="text-success">-</h3><p>CO2 Saved (kg)</p></div></div>
+                        <div class="col-md-3"><div class="card p-4 text-center"><h3 id="peopleServed" class="text-primary">-</h3><p>People Served</p></div></div>
+                    </div>
+                    <div class="mt-5">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h3>System Users</h3>
+                                <div id="userList" class="card p-3">Loading...</div>
+                            </div>
+                            <div class="col-md-6">
+                                <h3>Activity Logs</h3>
+                                <div id="adminLogs" class="card p-3" style="max-height: 400px; overflow-y: auto;">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                fetchAdminStats();
+                fetchAdminLogs();
+            }
+        }
+
+        async function fetchAdminStats() {
+            const stats = await api_request('/admin/stats');
+            document.getElementById('totalDonations').innerText = stats.total_donations;
+            document.getElementById('foodSaved').innerText = stats.food_saved_kg + " kg";
+            document.getElementById('co2Saved').innerText = stats.co2_saved_kg + " kg";
+            document.getElementById('peopleServed').innerText = stats.people_served;
+            
+            const users = await api_request('/admin/users');
+            document.getElementById('userList').innerHTML = users.map(u => `
+                <div class="border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="d-block">${u.name}</strong>
+                        <small class="text-muted">${u.role.toUpperCase()} | ${u.email}</small>
+                    </div>
+                    <div>
+                        ${u.role === 'ngo' ? `
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn ${u.is_approved_ngo === 1 ? 'btn-success' : 'btn-outline-success'}" onclick="approveNGO(${u.id}, 1)">Approve</button>
+                                <button class="btn ${u.is_approved_ngo === -1 ? 'btn-danger' : 'btn-outline-danger'}" onclick="approveNGO(${u.id}, -1)">Reject</button>
+                            </div>
+                        ` : '<span class="badge bg-secondary">System User</span>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function approveNGO(id, status) {
+            const res = await api_request(`/admin/approve-ngo/${id}?status=${status}`, 'POST');
+            alert(res.message);
+            fetchAdminStats();
+        }
+
+        async function fetchAdminLogs() {
+            const logs = await api_request('/admin/logs');
+            document.getElementById('adminLogs').innerHTML = logs.map(log => `
+                <div class="border-bottom py-2">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-primary fw-bold">${log.action}</small>
+                        <small class="text-muted">${new Date(log.created_at).toLocaleString()}</small>
+                    </div>
+                    <p class="mb-0 small">${log.details}</p>
+                </div>
+            `).join('');
+        }
+
+        async function fetchMyAssignments() {
+            const donations = await api_request('/assignments/my');
+            const grid = document.getElementById('assignedTasks');
+            if (donations.length === 0) {
+                grid.innerHTML = "<p>No assignments currently.</p>";
+                return;
+            }
+            grid.innerHTML = donations.map(d => `
+                <div class="col-md-6">
+                    <div class="card p-3">
+                        <h5>${d.food_name}</h5>
+                        <p>${d.location}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-primary">${d.status}</span>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-info" onclick="updateDonationStatus(${d.id}, 'picked_up')">Picked Up</button>
+                                <button class="btn btn-sm btn-outline-success" onclick="updateDonationStatus(${d.id}, 'delivered')">Delivered</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-dark w-100" onclick="simulateScan(${d.id})">📷 Scan QR for Pickup</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function simulateScan(id) {
+            const code = prompt("Scan Result (Enter the code shown on Donor screen):");
+            if (code === `DONATION-${id}`) {
+                alert("✅ QR Code Verified! You can now pick up the food.");
+                updateDonationStatus(id, 'picked_up');
+            } else {
+                alert("❌ Invalid QR Code. Verification failed.");
+            }
+        }
+
+        async function updateDonationStatus(id, status) {
+            await api_request(`/assignments/${id}/status?status=${status}`, 'POST');
+            location.reload();
+        }
+
+        async function showProfile() {
+            const user = await api_request('/me');
+            const content = document.getElementById('dashboardContent');
+            content.innerHTML = `
+                <div class="card p-5 fade-in">
+                    <h3 class="fw-bold mb-4 text-center">Manage Profile</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="profName" class="form-control" value="${user.name}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="profPhone" class="form-control" value="${user.phone}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Address</label>
+                            <input type="text" id="profAddress" class="form-control" value="${user.address}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">New Password (leave blank to keep current)</label>
+                            <input type="password" id="profPass" class="form-control">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100 mt-4 py-2" onclick="updateProfile()">Update Profile</button>
+                    <div id="profMsg" class="mt-3 text-center"></div>
+                </div>
+            `;
+        }
+
+        async function updateProfile() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            const data = {
+                username: user.username, // Required by schema
+                email: user.email,       // Required by schema
+                role: user.role,        // Required by schema
+                name: document.getElementById('profName').value,
+                phone: document.getElementById('profPhone').value,
+                address: document.getElementById('profAddress').value,
+                password: document.getElementById('profPass').value || ""
+            };
+            const res = await api_request('/users/update', 'PUT', data);
+            if (res.username) {
+                document.getElementById('profMsg').innerHTML = '<span class="text-success">✅ Profile updated successfully!</span>';
+                document.getElementById('userName').innerText = res.name;
+                localStorage.setItem('user', JSON.stringify(res));
+            } else {
+                document.getElementById('profMsg').innerHTML = '<span class="text-danger">❌ Update failed.</span>';
+            }
+        }
+
+        function getFreshnessBadge(expiryTime) {
+            const now = new Date();
+            const expiry = new Date(expiryTime);
+            const diff = (expiry - now) / (1000 * 60 * 60); // hours
+
+            if (diff < 0) return `<span class="badge bg-danger">EXPIRED</span>`;
+            if (diff < 2) return `<span class="badge bg-warning">EXPIRING SOON (${Math.round(diff * 60)}m)</span>`;
+            return `<span class="badge bg-success">FRESH (${Math.round(diff)}h left)</span>`;
+        }
+
+        async function fetchMyDonations() {
+            const donations = await api_request('/donations/my');
+            const list = document.getElementById('myDonations');
+            if (donations.length === 0) {
+                list.innerHTML = "<p>No donations yet.</p>";
+                return;
+            }
+            list.innerHTML = donations.map(d => `
+                <div class="border-bottom py-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>${d.food_name}</strong>
+                        <div>
+                            ${getFreshnessBadge(d.expiry_time)}
+                            <span class="badge bg-info ms-2">${d.status}</span>
+                        </div>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-info" onclick="showAIAnalysis(${d.id})">💡 AI Predict</button>
+                        <button class="btn btn-outline-dark" onclick="showQR(${d.id})">📱 View QR</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function fetchAvailableDonations() {
+            const donations = await api_request('/donations');
+            const grid = document.getElementById('availableDonations');
+            if (donations.length === 0) {
+                grid.innerHTML = "<p>No available food at the moment.</p>";
+                return;
+            }
+
+            // Initialize Map
+            const map = L.map('map').setView([12.9716, 77.5946], 13); // Default to a city center
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            grid.innerHTML = donations.map(d => {
+                // Add Marker if coords exist
+                if (d.lat && d.lon) {
+                    L.marker([d.lat, d.lon]).addTo(map).bindPopup(d.food_name);
+                }
+                
+                return `
+                <div class="col-md-6">
+                    <div class="card p-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <h5>${d.food_name}</h5>
+                            ${getFreshnessBadge(d.expiry_time)}
+                        </div>
+                        <p class="mb-3">${d.quantity} | ${d.location}</p>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success flex-grow-1" onclick="acceptDonation(${d.id})">Accept Request</button>
+                            <button class="btn btn-outline-info" onclick="showAIAnalysis(${d.id})">💡 AI</button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        async function acceptDonation(id) {
+            const res = await api_request(`/donations/${id}/accept`, 'POST');
+            alert(res.message || "Success");
+            location.reload();
+        }
+
+        async function showAIAnalysis(id) {
+            const result = await api_request(`/predict-spoilage/${id}`);
+            alert(`AI Analysis:\nStatus: ${result.label}\nConfidence Score: ${result.confidence_score}%`);
+        }
+
+        function showQR(id) {
+            const content = document.getElementById('dashboardContent');
+            content.innerHTML = `
+                <div class="card p-5 text-center fade-in">
+                    <h3>Pickup Verification Code</h3>
+                    <p class="text-muted">Show this QR code to the volunteer for verification.</p>
+                    <div id="qrcode" class="d-flex justify-content-center my-4"></div>
+                    <button class="btn btn-outline-primary" onclick="location.reload()">Back to Dashboard</button>
+                </div>
+            `;
+            new QRCode(document.getElementById("qrcode"), `DONATION-${id}`);
+        }
+
+        function showForm() {
+            const content = document.getElementById('dashboardContent');
+            content.innerHTML = `
+                <div class="card p-4 fade-in">
+                    <h3>Post New Food Donation</h3>
+                    <form id="donationForm">
+                        <div class="mb-3">
+                            <label class="form-label">Food Name</label>
+                            <input type="text" class="form-control" id="food_name" required placeholder="e.g. 5kg Biryani">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quantity</label>
+                            <input type="text" class="form-control" id="quantity" required placeholder="e.g. 10 plates / 5 people">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location Address</label>
+                            <input type="text" class="form-control" id="location" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pickup Time</label>
+                                <input type="datetime-local" class="form-control" id="pickup_time" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Expiry Time</label>
+                                <input type="datetime-local" class="form-control" id="expiry_time" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Food Image</label>
+                            <input type="file" class="form-control" id="foodImage" accept="image/*" onchange="previewImage(event)">
+                            <div id="imagePreview" class="mt-2 text-center" style="display:none;">
+                                <img src="" id="previewImg" class="rounded border shadow-sm" style="max-height: 150px;">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Post Donation</button>
+                    </form>
+                </div>
+            `;
+            
+            document.getElementById('donationForm').onsubmit = createDonation;
+        }
+
+        function previewImage(event) {
+            const preview = document.getElementById('imagePreview');
+            const img = document.getElementById('previewImg');
+            const file = event.target.files[0];
+            if (file) {
+                img.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            }
+        }
+
+        async function createDonation(e) {
+            e.preventDefault();
+            
+            let imageUrl = null;
+            const imageFile = document.getElementById('foodImage').files[0];
+            
+            if (imageFile) {
+                const formData = new FormData();
+                formData.append('file', imageFile);
+                
+                const uploadRes = await fetch(`${API_URL}/donations/upload-image`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                imageUrl = uploadData.image_url;
+            }
+
+            const data = {
+                food_name: document.getElementById('food_name').value,
+                quantity: document.getElementById('quantity').value,
+                location: document.getElementById('location').value,
+                pickup_time: new Date(document.getElementById('pickup_time').value).toISOString(),
+                expiry_time: new Date(document.getElementById('expiry_time').value).toISOString(),
+                lat: 0.0,
+                lon: 0.0,
+                image_url: imageUrl
+            };
+
+            const result = await api_request('/donations', 'POST', data);
+            if (result.id) {
+                alert("Donation posted successfully!");
+                location.reload();
+            } else {
+                alert("Error posting donation");
+            }
+        }
+    </script>
+</body>
+</html>

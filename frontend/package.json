@@ -1,0 +1,9 @@
+{
+  "name": "food-waste-donation-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Food Waste Donation System",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Directly serving static files'"
+  }
+}

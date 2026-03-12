@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Waste Donation System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.html">🌱 FoodWasteRelief</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="how-it-works.html">How It Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="donations.html">Browse food</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-outline-primary ms-lg-2" href="login.html">Login</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-primary ms-lg-2 text-white" href="register.html">Join Us</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section text-center fade-in">
+        <div class="container">
+            <h1 class="display-3 fw-bold mb-4">Feed People, <span class="text-warning">Not Landfills</span></h1>
+            <p class="lead mb-5 px-lg-5">Connecting surplus food to those in need through **AI-powered spoilage prediction** and **secure QR handoffs**.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="register.html" class="btn btn-light btn-lg text-primary fw-bold px-4">Start Donating</a>
+                <a href="donations.html" class="btn btn-outline-light btn-lg px-4">Browse Food</a>
+            </div>
+        </div>
+    </section>
+
+    <main class="container py-5">
+        <div class="row g-4" id="stats">
+            <div class="col-md-4">
+                <div class="card p-4 text-center">
+                    <h2 class="text-primary fw-bold">500+</h2>
+                    <p class="text-muted">Meals Saved</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-4 text-center">
+                    <h2 class="text-primary fw-bold">20+</h2>
+                    <p class="text-muted">NGO Partners</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-4 text-center">
+                    <h2 class="text-primary fw-bold">100+</h2>
+                    <p class="text-muted">Volunteers</p>
+                </div>
+            </div>
+        </div>
+
+        <section class="py-5 bg-white rounded-5 shadow-sm my-5 px-4 overflow-hidden">
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <h2 class="fw-bold mb-3">Powered by Smart Tech</h2>
+                    <p class="text-muted">We use advanced technology to ensure food safety and logistics efficiency.</p>
+                    <div class="mt-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="fs-2 me-3">🤖</span>
+                            <div>
+                                <h6 class="fw-bold mb-0">AI Spoilage Prediction</h6>
+                                <small class="text-muted">Real-time safety scores for every donation.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="fs-2 me-3">🔐</span>
+                            <div>
+                                <h6 class="fw-bold mb-0">Secure QR Verification</h6>
+                                <small class="text-muted">Hassle-free, verified hand-offs for volunteers.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="fs-2 me-3">📈</span>
+                            <div>
+                                <h6 class="fw-bold mb-0">Live Impact Tracking</h6>
+                                <small class="text-muted">Visualize your CO2 reduction in real-time.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-primary text-white p-5 rounded-4 text-center">
+                        <h1 class="display-1">🌍</h1>
+                        <h3>Total Impact</h3>
+                        <p class="mb-0">Join 1000+ donors making a difference.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="py-5">
+            <h2 class="text-center fw-bold mb-5">Simple 3-Step Process</h2>
+            <div class="row g-4">
+                <div class="col-md-4 text-center">
+                    <div class="card h-100 p-4 border-0 shadow-sm">
+                        <div class="fs-1 mb-3">📦</div>
+                        <h3>Post Surplus</h3>
+                        <p class="text-muted">List excess food with our intuitive interface.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="card h-100 p-4 border-0 shadow-sm">
+                        <div class="fs-1 mb-3">🤝</div>
+                        <h3>Claim & Assign</h3>
+                        <p class="text-muted">NGOs claim food and assign verified volunteers.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="card h-100 p-4 border-0 shadow-sm">
+                        <div class="fs-1 mb-3">🚚</div>
+                        <h3>Deliver Safely</h3>
+                        <p class="text-muted">Verified delivery via secure QR verification.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-top py-4 mt-5">
+        <div class="container text-center">
+            <p class="text-muted mb-0">&copy; 2026 Food Waste Donation Management System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
