@@ -63,7 +63,7 @@ def predict_spoilage(donation_id: int, db: Session = Depends(get_db)):
 def health_check():
     return {
         "status": "healthy", 
-        "version": "1.0.3-hashing-fix", 
+        "version": "1.0.4-pbkdf2-fix", 
         "database": str(engine.url)
     }
 
