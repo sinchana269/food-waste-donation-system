@@ -408,10 +408,18 @@
                     <h3>Pickup Verification Code</h3>
                     <p class="text-muted">Show this QR code to the volunteer for verification.</p>
                     <div id="qrcode" class="d-flex justify-content-center my-4"></div>
-                    <button class="btn btn-outline-primary" onclick="location.reload()">Back to Dashboard</button>
+                    <div class="alert alert-light border">
+                        <small class="text-muted d-block">Digital Code for NGO/Volunteer:</small>
+                        <strong class="fs-4">DONATION-${id}</strong>
+                    </div>
+                    <button class="btn btn-outline-primary mt-3" onclick="location.reload()">Back to Dashboard</button>
                 </div>
             `;
-            new QRCode(document.getElementById("qrcode"), `DONATION-${id}`);
+            new QRCode(document.getElementById("qrcode"), {
+                text: `DONATION-${id}`,
+                width: 200,
+                height: 200
+            });
         }
 
         function showForm() {
