@@ -61,7 +61,11 @@ def predict_spoilage(donation_id: int, db: Session = Depends(get_db)):
 
 @app.get("/")
 def health_check():
-    return {"status": "healthy", "database": str(engine.url)}
+    return {
+        "status": "healthy", 
+        "version": "1.0.3-hashing-fix", 
+        "database": str(engine.url)
+    }
 
 def log_action(db: Session, action: str, details: str):
     try:
