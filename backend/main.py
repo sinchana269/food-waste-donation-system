@@ -59,42 +59,54 @@ def predict_spoilage(donation_id: int, db: Session = Depends(get_db)):
     
     return {"confidence_score": round(max(0, confidence), 2), "label": label}
 
+@app.get("/")
+def health_check():
+    return {"status": "healthy", "database": str(engine.url)}
+
 def log_action(db: Session, action: str, details: str):
-    log = models.AdminLog(action=action, details=details)
-    db.add(log)
-    db.commit()
+    try:
+        log = models.AdminLog(action=action, details=details)
+        db.add(log)
+        db.commit()
+    except Exception as e:
+        print(f"Logging error: {e}")
+        db.rollback()
 
 @app.post("/register", response_model=schemas.UserResponse)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # Check for duplicate username
-    if db.query(models.User).filter(models.User.username == user.username).first():
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    # Check for duplicate email
-    if db.query(models.User).filter(models.User.email == user.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    hashed_password = auth.get_password_hash(user.password)
-    new_user = models.User(
-        username=user.username,
-        email=user.email,
-        hashed_password=hashed_password,
-        role=user.role,
-        name=user.name,
-        phone=user.phone,
-        address=user.address,
-        lat=user.lat,
-        lon=user.lon
-    )
-    
     try:
+        # Check for duplicate username
+        if db.query(models.User).filter(models.User.username == user.username).first():
+            raise HTTPException(status_code=400, detail="Username already registered")
+        
+        # Check for duplicate email
+        if db.query(models.User).filter(models.User.email == user.email).first():
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        hashed_password = auth.get_password_hash(user.password)
+        new_user = models.User(
+            username=user.username,
+            email=user.email,
+            hashed_password=hashed_password,
+            role=user.role,
+            name=user.name,
+            phone=user.phone,
+            address=user.address,
+            lat=user.lat,
+            lon=user.lon,
+            is_approved_ngo=0
+        )
+        
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         log_action(db, "User Registered", f"New user {user.username} joined as {user.role}")
         return new_user
+    except HTTPException as e:
+        raise e
     except Exception as e:
         db.rollback()
+        print(f"REGISTRATION ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
 
 @app.post("/login", response_model=schemas.Token)
