@@ -15,15 +15,22 @@ SECRET_KEY = "super_secret_food_waste_key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import hashlib
+
+# Use SHA-256 pre-hashing to avoid bcrypt's 72-byte limit and handle all characters safely.
+# Also explicitly disable truncate_error in the context.
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", truncate_error=False)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    # Pre-hash for verification as well to match the hashing logic
+    h = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
+    return pwd_context.verify(h, hashed_password)
 
 def get_password_hash(password):
-    # Truncate to 72 characters to satisfy bcrypt's limit and avoid errors in some environments
-    return pwd_context.hash(password[:72])
+    # Pre-hash with sha256 to ensure the input to bcrypt is always a 64-character hex string (well under the 72-byte limit)
+    h = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    return pwd_context.hash(h)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
