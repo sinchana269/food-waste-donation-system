@@ -103,8 +103,12 @@
                     <h3>Nearby Food Available</h3>
                     <div id="map" class="mb-4" style="height: 300px; border-radius: 15px;"></div>
                     <div class="row g-4" id="availableDonations">Loading...</div>
+                    
+                    <h3 class="mt-5">My Accepted Donations</h3>
+                    <div class="row g-4" id="acceptedDonations">Loading...</div>
                 `;
                 fetchAvailableDonations();
+                fetchAcceptedDonations();
             } else if (role === 'volunteer') {
                 content.innerHTML = `
                     <h3>My Assigned Pickups</h3>
@@ -340,6 +344,50 @@
                     </div>
                 </div>
             `}).join('');
+        }
+
+        async function fetchAcceptedDonations() {
+            const donations = await api_request('/donations/my'); // This endpoint returns the NGO's accepted ones in this context
+            const grid = document.getElementById('acceptedDonations');
+            if (donations.length === 0) {
+                grid.innerHTML = "<p>You haven't accepted any donations yet.</p>";
+                return;
+            }
+
+            const volunteers = await api_request('/volunteers');
+            const volOptions = volunteers.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+
+            grid.innerHTML = donations.map(d => `
+                <div class="col-md-6">
+                    <div class="card p-3 h-100">
+                        <h5>${d.food_name}</h5>
+                        <p class="small mb-1"><strong>Location:</strong> ${d.location}</p>
+                        <p class="small mb-3"><strong>Status:</strong> <span class="badge bg-info">${d.status}</span></p>
+                        
+                        <div class="mt-auto">
+                            <label class="form-label small">Assign Volunteer</label>
+                            <div class="input-group input-group-sm">
+                                <select class="form-select" id="volSelect_${d.id}">
+                                    <option value="">Select a volunteer...</option>
+                                    ${volOptions}
+                                </select>
+                                <button class="btn btn-primary" onclick="assignVolunteer(${d.id})">Assign</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function assignVolunteer(donationId) {
+            const volId = document.getElementById(`volSelect_${donationId}`).value;
+            if (!volId) {
+                alert("Please select a volunteer first.");
+                return;
+            }
+            const res = await api_request(`/donations/${donationId}/assign?volunteer_id=${volId}`, 'POST');
+            alert(res.message || "Volunteer assigned successfully!");
+            location.reload();
         }
 
         async function acceptDonation(id) {
