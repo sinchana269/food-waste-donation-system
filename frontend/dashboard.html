@@ -70,7 +70,11 @@
     <script>
         window.onload = async () => {
             const token = localStorage.getItem('token');
+            const urlParams = new URLSearchParams(window.location.search);
+            const verifyIdFromUrl = urlParams.get('verify');
+            
             if (!token) {
+                if (verifyIdFromUrl) sessionStorage.setItem('pendingVerify', verifyIdFromUrl);
                 window.location.href = 'login.html';
                 return;
             }
@@ -82,11 +86,11 @@
                 loadDashboard(user.role); // Kept 'loadDashboard' to match existing function name
 
                 // Check for QR Auto-Verify
-                const urlParams = new URLSearchParams(window.location.search);
-                const verifyId = urlParams.get('verify');
+                const verifyId = verifyIdFromUrl || sessionStorage.getItem('pendingVerify');
                 if (verifyId && user.role === 'volunteer') {
+                    sessionStorage.removeItem('pendingVerify');
                     setTimeout(() => {
-                        simulateScan(verifyId, `DONATION-${verifyId}`); // Changed to simulateScan to match existing function
+                        simulateScan(verifyId, `DONATION-${verifyId}`);
                     }, 1000);
                 }
             } catch (err) {
@@ -239,7 +243,8 @@
         }
 
         async function updateDonationStatus(id, status) {
-            await api_request(`/assignments/${id}/status?status=${status}`, 'POST');
+            const res = await api_request(`/assignments/${id}/status?status=${status}`, 'POST');
+            alert(`Success: Status updated to ${status}`);
             location.reload();
         }
 
