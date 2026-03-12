@@ -68,15 +68,32 @@
 
     <script src="js/app.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (!user) window.location.href = 'login.html';
+        window.onload = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
 
-            document.getElementById('userName').innerText = user.name;
-            document.getElementById('userRole').innerText = user.role.toUpperCase();
+            try {
+                const user = await api_request('/me');
+                document.getElementById('userName').innerText = user.name; // Kept 'userName' to match HTML
+                document.getElementById('userRole').innerText = user.role.toUpperCase();
+                loadDashboard(user.role); // Kept 'loadDashboard' to match existing function name
 
-            loadDashboard(user.role);
-        });
+                // Check for QR Auto-Verify
+                const urlParams = new URLSearchParams(window.location.search);
+                const verifyId = urlParams.get('verify');
+                if (verifyId && user.role === 'volunteer') {
+                    setTimeout(() => {
+                        simulateScan(verifyId, `DONATION-${verifyId}`); // Changed to simulateScan to match existing function
+                    }, 1000);
+                }
+            } catch (err) {
+                localStorage.removeItem('token');
+                window.location.href = 'login.html';
+            }
+        };
 
         function loadDashboard(role) {
             const content = document.getElementById('dashboardContent');
@@ -211,10 +228,10 @@
             `).join('');
         }
 
-        function simulateScan(id) {
-            const code = prompt("Scan Result (Enter the code shown on Donor screen):");
+        function simulateScan(id, autoCode = null) {
+            const code = autoCode || prompt("Scan Result (Enter the code shown on Donor screen):");
             if (code === `DONATION-${id}`) {
-                alert("✅ QR Code Verified! You can now pick up the food.");
+                alert("✅ QR Code Verified! Pickup confirmed.");
                 updateDonationStatus(id, 'picked_up');
             } else {
                 alert("❌ Invalid QR Code. Verification failed.");
@@ -403,6 +420,7 @@
 
         function showQR(id) {
             const content = document.getElementById('dashboardContent');
+            const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${id}`;
             content.innerHTML = `
                 <div class="card p-5 text-center fade-in">
                     <h3>Pickup Verification Code</h3>
@@ -414,8 +432,8 @@
                             Scan not working? Show manual code
                         </button>
                         <div id="manualCode" class="d-none mt-2">
-                            <div class="alert alert-info">
-                                <small class="d-block">Manual Code:</small>
+                            <div class="alert alert-info border">
+                                <small class="d-block text-muted">Security Token:</small>
                                 <strong class="fs-4">DONATION-${id}</strong>
                             </div>
                         </div>
@@ -425,9 +443,9 @@
                 </div>
             `;
             new QRCode(document.getElementById("qrcode"), {
-                text: `DONATION-${id}`,
-                width: 200,
-                height: 200,
+                text: verifyUrl,
+                width: 250,
+                height: 250,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
