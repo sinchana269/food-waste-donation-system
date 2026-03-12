@@ -207,6 +207,10 @@ def accept_donation(
     log_action(db, "Donation Accepted", f"NGO {current_user.username} accepted donation {donation.food_name}")
     return {"message": "Donation accepted"}
 
+@app.get("/volunteers", response_model=List[schemas.UserResponse])
+def get_volunteers(current_user: models.User = Depends(auth.check_role(["ngo"])), db: Session = Depends(get_db)):
+    return db.query(models.User).filter(models.User.role == "volunteer").all()
+
 @app.post("/donations/{donation_id}/assign")
 def assign_volunteer(
     donation_id: int,
